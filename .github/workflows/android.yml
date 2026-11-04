@@ -1,3 +1,4 @@
+
 name: Build ChessMate APK
 
 on:
@@ -9,6 +10,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -24,6 +26,52 @@ jobs:
 
       - name: Install Android SDK platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Download chess library and Stockfish
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p app/src/main/assets
+
+          curl -fL \
+            https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js \
+            -o app/src/main/assets/chess.min.js
+
+          npm pack stockfish@19.0.1
+
+          mkdir -p /tmp/stockfish-package
+
+          tar -xzf stockfish-19.0.1.tgz \
+            -C /tmp/stockfish-package
+
+          ENGINE_JS=$(find /tmp/stockfish-package/package \
+            -type f \
+            -name 'stockfish-19-lite-single.js' \
+            -print -quit)
+
+          ENGINE_WASM=$(find /tmp/stockfish-package/package \
+            -type f \
+            -name 'stockfish-19-lite-single.wasm' \
+            -print -quit)
+
+          test -f "$ENGINE_JS"
+          test -f "$ENGINE_WASM"
+
+          cp "$ENGINE_JS" \
+            app/src/main/assets/stockfish-19-lite-single.js
+
+          cp "$ENGINE_WASM" \
+            app/src/main/assets/stockfish-19-lite-single.wasm
+
+          curl -fL \
+            https://www.gnu.org/licenses/gpl-3.0.txt \
+            -o app/src/main/assets/stockfish-GPL-3.0.txt
+
+          rm -f stockfish-19.0.1.tgz
+
+          echo "Chess and Stockfish assets prepared:"
+          ls -lh app/src/main/assets
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
