@@ -12,10 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract project
+            - name: Extract project
         run: |
           mkdir extracted
           unzip -q ChessMate-cloud-build.zip -d extracted
+          rm -rf extracted/.github
           cp -R extracted/. .
           rm -rf extracted
           rm ChessMate-cloud-build.zip
