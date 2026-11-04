@@ -1,355 +1,412 @@
-
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
+<meta name="theme-color" content="#f4f3ef">
 <title>ChessMate</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
+<script src="chess.min.js"></script>
 <style>
-* {
-    box-sizing: border-box;
-}
-
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
 body {
     margin: 0;
     background: #f4f3ef;
     color: #222;
-    font-family: system-ui, sans-serif;
+    font-family: system-ui, -apple-system, sans-serif;
     display: flex;
     justify-content: center;
 }
-
-main {
-    width: min(100vw, 520px);
-    padding: 18px;
-}
-
-h1 {
-    font-size: 25px;
-    margin: 5px 0 4px;
-}
-
-.sub {
-    color: #777;
-    margin: 0 0 16px;
-}
-
-#status {
-    min-height: 26px;
-    font-weight: 600;
-    margin: 12px 0;
-}
-
-/* Chess board: all 64 squares have equal dimensions */
+main { width: min(100vw, 520px); padding: 16px; }
+.header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+h1 { font-size: 25px; margin: 4px 0 2px; }
+.sub { color:#777; margin:0 0 12px; font-size:13px; }
+.name-line { margin: 4px 0 12px; font-size:15px; }
+.name-line strong { font-weight:700; }
+.text-button { background:transparent; color:#425a46; padding:8px; margin:0; font-size:13px; }
+.stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; margin:10px 0 14px; }
+.stat { background:#fff; border:1px solid #e6e3dc; border-radius:10px; padding:9px 4px; text-align:center; min-width:0; }
+.stat strong { display:block; font-size:21px; line-height:1.25; }
+.stat span { display:block; color:#777; font-size:11px; white-space:nowrap; }
+.settings { display:flex; justify-content:space-between; align-items:center; gap:10px; margin:8px 0 10px; }
+.settings label { color:#555; font-size:13px; }
+select { border:1px solid #d6d3ca; border-radius:8px; background:#fff; color:#222; padding:8px 10px; font-size:14px; }
 .board {
-    display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    grid-template-rows: repeat(8, minmax(0, 1fr));
-    aspect-ratio: 1;
-    border-radius: 7px;
-    overflow: hidden;
-    box-shadow: 0 5px 20px #0002;
+    display:grid;
+    grid-template-columns:repeat(8,minmax(0,1fr));
+    grid-template-rows:repeat(8,minmax(0,1fr));
+    width:100%;
+    aspect-ratio:1;
+    border-radius:7px;
+    overflow:hidden;
+    box-shadow:0 5px 20px #0002;
 }
-
 .sq {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-    font-size: clamp(26px, 9vw, 48px);
-    position: relative;
-    cursor: pointer;
-    user-select: none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+    font-size:clamp(25px,8.8vw,47px);
+    line-height:1;
+    position:relative;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
 }
-
-.light {
-    background: #eee9df;
-}
-
-.dark {
-    background: #879b83;
-}
-
-.selected {
-    box-shadow: inset 0 0 0 4px #e8bb46;
-}
-
-button {
-    border: 0;
-    border-radius: 9px;
-    padding: 12px 16px;
-    background: #262b28;
-    color: white;
-    font-size: 15px;
-    margin: 4px 5px 0 0;
-    cursor: pointer;
-}
-
-button.secondary {
-    background: #d9ddd6;
-    color: #222;
-}
-
-.note {
-    font-size: 12px;
-    color: #777;
-    margin-top: 14px;
-    line-height: 1.4;
-}
+.light { background:#eee9df; }
+.dark { background:#879b83; }
+.selected { box-shadow:inset 0 0 0 4px #e8bb46; }
+.last-move { background-image:linear-gradient(#e8bb4650,#e8bb4650); }
+.controls { display:flex; gap:8px; margin-top:12px; }
+button { border:0; border-radius:9px; padding:12px 16px; background:#262b28; color:white; font-size:14px; cursor:pointer; }
+button.secondary { background:#d9ddd6; color:#222; }
+button:disabled { opacity:.45; cursor:default; }
+#status { min-height:25px; font-weight:600; margin:12px 0 2px; font-size:14px; }
+.note { font-size:11px; color:#858585; margin-top:13px; line-height:1.5; }
+.note a { color:#657d66; }
+.overlay { position:fixed; inset:0; background:#0008; display:flex; justify-content:center; align-items:center; padding:20px; z-index:10; }
+.overlay.hidden { display:none; }
+.modal { width:min(100%,360px); background:#fff; border-radius:16px; padding:22px; box-shadow:0 12px 40px #0003; }
+.modal h2 { margin:0 0 8px; font-size:21px; }
+.modal p { color:#666; font-size:14px; line-height:1.45; }
+.modal input { width:100%; border:1px solid #ccc; border-radius:9px; padding:12px; font-size:16px; margin:8px 0 14px; }
+.modal button { width:100%; }
 </style>
 </head>
-
 <body>
-
 <main>
+    <div class="header">
+        <div>
+            <h1>ChessMate</h1>
+            <p class="sub">A calm game of chess · You play White</p>
+        </div>
+        <button class="text-button" id="changeNameButton" type="button">Edit name</button>
+    </div>
 
-<h1>ChessMate</h1>
-<p class="sub">A calm game of chess · You play White</p>
+    <div class="name-line">Player: <strong id="playerNameLabel">Player</strong></div>
 
-<div id="board" class="board"></div>
+    <section class="stats" aria-label="Your statistics">
+        <div class="stat"><strong id="gamesStat">0</strong><span>Games</span></div>
+        <div class="stat"><strong id="winsStat">0</strong><span>Wins</span></div>
+        <div class="stat"><strong id="lossesStat">0</strong><span>Losses</span></div>
+        <div class="stat"><strong id="drawsStat">0</strong><span>Draws</span></div>
+    </section>
 
-<div id="status">Your move</div>
+    <div class="settings">
+        <label for="difficulty">Computer strength</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+    </div>
 
-<button onclick="newGame()">New game</button>
-<button class="secondary" onclick="undo()">Undo</button>
+    <div id="board" class="board" aria-label="Chess board"></div>
+    <div id="status" role="status">Loading Stockfish…</div>
 
-<p class="note">
-First playable preview. You play White against the computer.
-Computer currently selects a random legal move.
-Internet is needed to load the chess rules library.
-</p>
+    <div class="controls">
+        <button id="newGameButton" type="button">New game</button>
+        <button id="undoButton" class="secondary" type="button">Undo</button>
+    </div>
 
+    <p class="note">
+        Stockfish 19 Lite · Games and statistics are saved on this device.
+        <br>Stockfish is distributed under the <a href="stockfish-GPL-3.0.txt">GPL-3.0 license</a>.
+    </p>
 </main>
 
-<script>
+<div id="nameOverlay" class="overlay hidden">
+    <div class="modal">
+        <h2 id="nameDialogTitle">Welcome to ChessMate</h2>
+        <p>Choose the name you want to see in your player profile and statistics.</p>
+        <input id="nameInput" type="text" maxlength="22" autocomplete="nickname" placeholder="Your name">
+        <button id="saveNameButton" type="button">Start playing</button>
+    </div>
+</div>
 
-// Create chess game
+<script>
+'use strict';
+
 const game = new Chess();
+const PIECES = {
+    w: { k:'♔', q:'♕', r:'♖', b:'♗', n:'♘', p:'♙' },
+    b: { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟' }
+};
+const NAME_KEY = 'chessmate.playerName.v1';
+const STATS_KEY = 'chessmate.stats.v1';
+const DEFAULT_STATS = { games:0, wins:0, losses:0, draws:0 };
 
 let selected = null;
-let computerTimer = null;
+let engine = null;
+let engineReady = false;
+let engineFailed = false;
+let thinking = false;
+let ignoredBestMoves = 0;
+let resultRecorded = false;
+let playerName = localStorage.getItem(NAME_KEY) || '';
+let stats = loadStats();
 
-// Chess pieces
-const pieces = {
-    w: {
-        k: '♔',
-        q: '♕',
-        r: '♖',
-        b: '♗',
-        n: '♘',
-        p: '♙'
-    },
-    b: {
-        k: '♚',
-        q: '♛',
-        r: '♜',
-        b: '♝',
-        n: '♞',
-        p: '♟'
-    }
-};
-
-// Cancel scheduled computer move
-function cancelComputerMove() {
-    if (computerTimer !== null) {
-        clearTimeout(computerTimer);
-        computerTimer = null;
+function loadStats() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STATS_KEY) || 'null');
+        if (!saved || typeof saved !== 'object') return { ...DEFAULT_STATS };
+        return {
+            games: Number(saved.games) || 0,
+            wins: Number(saved.wins) || 0,
+            losses: Number(saved.losses) || 0,
+            draws: Number(saved.draws) || 0
+        };
+    } catch (_) {
+        return { ...DEFAULT_STATS };
     }
 }
 
-// Draw chess board and update status
+function saveStats() {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    updateStatsDisplay();
+}
+
+function updateStatsDisplay() {
+    document.getElementById('gamesStat').textContent = stats.games;
+    document.getElementById('winsStat').textContent = stats.wins;
+    document.getElementById('lossesStat').textContent = stats.losses;
+    document.getElementById('drawsStat').textContent = stats.draws;
+}
+
+function updatePlayerName() {
+    document.getElementById('playerNameLabel').textContent = playerName || 'Player';
+}
+
+function showNameDialog() {
+    const input = document.getElementById('nameInput');
+    input.value = playerName;
+    document.getElementById('nameDialogTitle').textContent = playerName ? 'Edit your name' : 'Welcome to ChessMate';
+    document.getElementById('saveNameButton').textContent = playerName ? 'Save name' : 'Start playing';
+    document.getElementById('nameOverlay').classList.remove('hidden');
+    setTimeout(() => input.focus(), 100);
+}
+
+function savePlayerName() {
+    const value = document.getElementById('nameInput').value.trim();
+    if (!value) {
+        document.getElementById('nameInput').focus();
+        return;
+    }
+    playerName = value.slice(0, 22);
+    localStorage.setItem(NAME_KEY, playerName);
+    updatePlayerName();
+    document.getElementById('nameOverlay').classList.add('hidden');
+    render();
+}
+
+function updateControls() {
+    document.getElementById('undoButton').disabled = thinking || game.history().length < 2 || game.game_over();
+    document.getElementById('newGameButton').disabled = false;
+}
+
+function statusText() {
+    if (engineFailed) return 'Stockfish could not load. Please reinstall the latest version.';
+    if (!engineReady) return 'Loading Stockfish engine…';
+    if (game.in_checkmate()) {
+        return game.turn() === 'b'
+            ? 'Checkmate! ' + (playerName || 'You') + ' win!'
+            : 'Checkmate! Computer wins.';
+    }
+    if (game.in_stalemate()) return 'Draw — stalemate.';
+    if (game.in_draw()) return 'Draw.';
+    if (game.in_check()) return game.turn() === 'w' ? 'Check! Your move.' : 'Computer is in check.';
+    if (thinking || game.turn() === 'b') return 'Stockfish is thinking…';
+    return (playerName || 'Your') + ' move';
+}
+
 function render() {
-
     const board = document.getElementById('board');
-
     board.innerHTML = '';
-
     const rows = game.board();
 
     for (let r = 0; r < 8; r++) {
-
         for (let c = 0; c < 8; c++) {
-
             const square = document.createElement('div');
-
-            square.className =
-                'sq ' + ((r + c) % 2 ? 'dark' : 'light');
-
+            square.className = 'sq ' + ((r + c) % 2 ? 'dark' : 'light');
             const piece = rows[r][c];
-
-            if (piece) {
-                square.textContent =
-                    pieces[piece.color][piece.type];
-            }
-
-            const name = 'abcdefgh'[c] + (8 - r);
-
-            if (selected === name) {
-                square.classList.add('selected');
-            }
-
-            square.onclick = () => tap(name);
-
+            if (piece) square.textContent = PIECES[piece.color][piece.type];
+            const squareName = 'abcdefgh'[c] + (8 - r);
+            if (selected === squareName) square.classList.add('selected');
+            square.addEventListener('click', () => tap(squareName));
             board.appendChild(square);
         }
     }
 
-    // Update game status
-    const status = document.getElementById('status');
-
-    if (game.in_checkmate()) {
-
-        status.textContent =
-            'Checkmate — ' +
-            (game.turn() === 'w' ? 'Black' : 'White') +
-            ' wins';
-
-    } else if (game.in_stalemate()) {
-
-        status.textContent = 'Draw — Stalemate';
-
-    } else if (game.in_draw()) {
-
-        status.textContent = 'Draw';
-
-    } else if (game.in_check()) {
-
-        status.textContent = 'Check!';
-
-    } else if (game.game_over()) {
-
-        status.textContent = 'Game over';
-
-    } else {
-
-        status.textContent =
-            game.turn() === 'w'
-                ? 'Your move'
-                : 'Computer thinking…';
-    }
+    document.getElementById('status').textContent = statusText();
+    updateControls();
 }
 
-// Handle player's tap
-function tap(squareName) {
+function finishGameIfNeeded() {
+    if (!game.game_over() || resultRecorded) return;
+    resultRecorded = true;
+    stats.games += 1;
 
-    if (game.game_over() || game.turn() !== 'w') {
+    if (game.in_checkmate()) {
+        // The side whose turn it is has been checkmated.
+        if (game.turn() === 'b') stats.wins += 1;
+        else stats.losses += 1;
+    } else {
+        stats.draws += 1;
+    }
+
+    saveStats();
+}
+
+function tap(squareName) {
+    if (!engineReady || engineFailed || thinking || game.game_over() || game.turn() !== 'w') return;
+    if (!playerName) {
+        showNameDialog();
         return;
     }
 
-    // Select a white piece
     if (selected === null) {
-
         const piece = game.get(squareName);
-
         if (piece && piece.color === 'w') {
             selected = squareName;
             render();
         }
-
         return;
     }
 
-    // Try to make a move
-    const move = game.move({
-        from: selected,
-        to: squareName,
-        promotion: 'q'
-    });
-
+    const move = game.move({ from:selected, to:squareName, promotion:'q' });
     selected = null;
 
-    // Invalid move
     if (!move) {
-
         const piece = game.get(squareName);
+        if (piece && piece.color === 'w') selected = squareName;
+        render();
+        return;
+    }
 
-        if (piece && piece.color === 'w') {
-            selected = squareName;
+    finishGameIfNeeded();
+    render();
+    if (!game.game_over()) requestComputerMove();
+}
+
+function requestComputerMove() {
+    if (!engineReady || engineFailed || game.game_over() || game.turn() !== 'b') return;
+
+    const settings = {
+        easy:   { skill:2,  time:350 },
+        medium: { skill:8,  time:1000 },
+        hard:   { skill:15, time:2200 }
+    };
+    const level = settings[document.getElementById('difficulty').value] || settings.medium;
+
+    thinking = true;
+    render();
+    engine.postMessage('setoption name Skill Level value ' + level.skill);
+    engine.postMessage('position fen ' + game.fen());
+    engine.postMessage('go movetime ' + level.time);
+}
+
+function handleEngineMessage(data) {
+    const message = String(data || '').trim();
+    const lines = message.split(/\r?\n/);
+
+    for (const line of lines) {
+        if (line === 'uciok') {
+            engine.postMessage('setoption name Threads value 1');
+            engine.postMessage('isready');
+        } else if (line === 'readyok') {
+            engineReady = true;
+            render();
+        } else if (line.startsWith('bestmove')) {
+            if (ignoredBestMoves > 0) {
+                ignoredBestMoves -= 1;
+                continue;
+            }
+            if (!thinking || game.turn() !== 'b') continue;
+
+            const match = line.match(/^bestmove\s+([a-h][1-8])([a-h][1-8])([qrbn])?/);
+            thinking = false;
+
+            if (match) {
+                const move = game.move({
+                    from: match[1],
+                    to: match[2],
+                    promotion: match[3] || 'q'
+                });
+                if (!move) {
+                    engineFailed = true;
+                }
+            }
+
+            finishGameIfNeeded();
+            render();
         }
-
-        render();
-
-        return;
     }
-
-    // Display player's move
-    render();
-
-    // Schedule computer response
-    cancelComputerMove();
-
-    computerTimer = setTimeout(computer, 400);
 }
 
-// Computer makes a random legal move
-function computer() {
-
-    computerTimer = null;
-
-    if (game.game_over() || game.turn() !== 'b') {
-        return;
-    }
-
-    const moves = game.moves();
-
-    if (moves.length === 0) {
+function initializeEngine() {
+    if (!window.Worker) {
+        engineFailed = true;
         render();
         return;
     }
 
-    const randomMove =
-        moves[Math.floor(Math.random() * moves.length)];
-
-    game.move(randomMove);
-
-    render();
+    try {
+        engine = new Worker('stockfish-19-lite-single.js');
+        engine.onmessage = event => handleEngineMessage(event.data);
+        engine.onerror = () => {
+            engineFailed = true;
+            thinking = false;
+            render();
+        };
+        engine.postMessage('uci');
+    } catch (_) {
+        engineFailed = true;
+        render();
+    }
 }
 
-// Start a new game
+function stopSearch() {
+    if (thinking && engine) {
+        ignoredBestMoves += 1;
+        engine.postMessage('stop');
+        thinking = false;
+    }
+}
+
 function newGame() {
-
-    cancelComputerMove();
-
+    stopSearch();
     game.reset();
-
     selected = null;
-
+    resultRecorded = false;
+    if (engineReady && engine) engine.postMessage('ucinewgame');
     render();
 }
 
-// Undo player's and computer's last moves
 function undo() {
-
-    cancelComputerMove();
-
-    if (game.history().length === 0) {
-        return;
-    }
-
-    // Undo the last move
+    if (thinking || game.game_over() || game.history().length < 2) return;
     game.undo();
-
-    // If it was the computer's turn,
-    // also undo the player's previous move
-    if (game.turn() === 'b') {
-        game.undo();
-    }
-
+    game.undo();
     selected = null;
-
+    resultRecorded = false;
+    if (engineReady && engine) engine.postMessage('ucinewgame');
     render();
 }
 
-// Initial screen
+document.getElementById('newGameButton').addEventListener('click', newGame);
+document.getElementById('undoButton').addEventListener('click', undo);
+document.getElementById('changeNameButton').addEventListener('click', showNameDialog);
+document.getElementById('saveNameButton').addEventListener('click', savePlayerName);
+document.getElementById('nameInput').addEventListener('keydown', event => {
+    if (event.key === 'Enter') savePlayerName();
+});
+
+updateStatsDisplay();
+updatePlayerName();
 render();
-
+if (!playerName) showNameDialog();
+initializeEngine();
 </script>
-
 </body>
 </html>
