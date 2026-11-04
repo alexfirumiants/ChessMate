@@ -1,31 +1,355 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
 <title>ChessMate</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f3ef;color:#222;font-family:system-ui,sans-serif;display:flex;justify-content:center}
-main{width:min(100vw,520px);padding:18px}h1{font-size:25px;margin:5px 0 4px}.sub{color:#777;margin:0 0 16px}
-#status{min-height:26px;font-weight:600;margin:12px 0}.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:7px;overflow:hidden;box-shadow:0 5px 20px #0002}
-.sq{display:flex;align-items:center;justify-content:center;font-size:clamp(26px,9vw,48px);position:relative;cursor:pointer;user-select:none}
-.light{background:#eee9df}.dark{background:#879b83}.selected{box-shadow:inset 0 0 0 4px #e8bb46}
-button{border:0;border-radius:9px;padding:12px 16px;background:#262b28;color:white;font-size:15px;margin:4px 5px 0 0}button.secondary{background:#d9ddd6;color:#222}
-.note{font-size:12px;color:#777;margin-top:14px;line-height:1.4}
-</style></head>
-<body><main><h1>ChessMate</h1><p class="sub">A calm game of chess · You play White</p>
-<div id="board" class="board"></div><div id="status">Your move</div>
-<button onclick="newGame()">New game</button><button class="secondary" onclick="undo()">Undo</button>
-<p class="note">First playable preview. Computer replies with a simple legal move. Internet is needed to load the chess rules library.</p></main>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f4f3ef;
+    color: #222;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+main {
+    width: min(100vw, 520px);
+    padding: 18px;
+}
+
+h1 {
+    font-size: 25px;
+    margin: 5px 0 4px;
+}
+
+.sub {
+    color: #777;
+    margin: 0 0 16px;
+}
+
+#status {
+    min-height: 26px;
+    font-weight: 600;
+    margin: 12px 0;
+}
+
+/* Chess board: all 64 squares have equal dimensions */
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+    aspect-ratio: 1;
+    border-radius: 7px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px #0002;
+}
+
+.sq {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    font-size: clamp(26px, 9vw, 48px);
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.light {
+    background: #eee9df;
+}
+
+.dark {
+    background: #879b83;
+}
+
+.selected {
+    box-shadow: inset 0 0 0 4px #e8bb46;
+}
+
+button {
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 16px;
+    background: #262b28;
+    color: white;
+    font-size: 15px;
+    margin: 4px 5px 0 0;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: #d9ddd6;
+    color: #222;
+}
+
+.note {
+    font-size: 12px;
+    color: #777;
+    margin-top: 14px;
+    line-height: 1.4;
+}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<h1>ChessMate</h1>
+<p class="sub">A calm game of chess · You play White</p>
+
+<div id="board" class="board"></div>
+
+<div id="status">Your move</div>
+
+<button onclick="newGame()">New game</button>
+<button class="secondary" onclick="undo()">Undo</button>
+
+<p class="note">
+First playable preview. You play White against the computer.
+Computer currently selects a random legal move.
+Internet is needed to load the chess rules library.
+</p>
+
+</main>
+
 <script>
-const game=new Chess();let selected=null;
-const pieces={w:{k:'♔',q:'♕',r:'♖',b:'♗',n:'♘',p:'♙'},b:{k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'}};
-function render(){let b=document.getElementById('board');b.innerHTML='';let rows=game.board();
-for(let r=0;r<8;r++)for(let c=0;c<8;c++){let sq=document.createElement('div');sq.className='sq '+((r+c)%2?'dark':'light');let p=rows[r][c];if(p)sq.textContent=pieces[p.color][p.type];let name='abcdefgh'[c]+(8-r);if(selected===name)sq.classList.add('selected');sq.onclick=()=>tap(name);b.appendChild(sq)}
-document.getElementById('status').textContent=game.isCheckmate()?'Checkmate — '+(game.turn()==='w'?'Black':'White')+' wins':game.in_check()?'Check!':game.game_over()?'Game over':game.turn()==='w'?'Your move':'Computer thinking…'}
-function tap(s){if(game.game_over()||game.turn()!=='w')return;if(!selected){let p=game.get(s);if(p&&p.color==='w'){selected=s;render()}return}
-let m=game.move({from:selected,to:s,promotion:'q'});selected=null;if(!m){let p=game.get(s);if(p&&p.color==='w')selected=s;render();return}render();setTimeout(computer,250)}
-function computer(){if(game.game_over())return;let ms=game.moves();if(!ms.length)return;game.move(ms[Math.floor(Math.random()*ms.length)]);render()}
-function newGame(){game.reset();selected=null;render()}function undo(){game.undo();if(game.turn()==='b')game.undo();selected=null;render()}
+
+// Create chess game
+const game = new Chess();
+
+let selected = null;
+let computerTimer = null;
+
+// Chess pieces
+const pieces = {
+    w: {
+        k: '♔',
+        q: '♕',
+        r: '♖',
+        b: '♗',
+        n: '♘',
+        p: '♙'
+    },
+    b: {
+        k: '♚',
+        q: '♛',
+        r: '♜',
+        b: '♝',
+        n: '♞',
+        p: '♟'
+    }
+};
+
+// Cancel scheduled computer move
+function cancelComputerMove() {
+    if (computerTimer !== null) {
+        clearTimeout(computerTimer);
+        computerTimer = null;
+    }
+}
+
+// Draw chess board and update status
+function render() {
+
+    const board = document.getElementById('board');
+
+    board.innerHTML = '';
+
+    const rows = game.board();
+
+    for (let r = 0; r < 8; r++) {
+
+        for (let c = 0; c < 8; c++) {
+
+            const square = document.createElement('div');
+
+            square.className =
+                'sq ' + ((r + c) % 2 ? 'dark' : 'light');
+
+            const piece = rows[r][c];
+
+            if (piece) {
+                square.textContent =
+                    pieces[piece.color][piece.type];
+            }
+
+            const name = 'abcdefgh'[c] + (8 - r);
+
+            if (selected === name) {
+                square.classList.add('selected');
+            }
+
+            square.onclick = () => tap(name);
+
+            board.appendChild(square);
+        }
+    }
+
+    // Update game status
+    const status = document.getElementById('status');
+
+    if (game.in_checkmate()) {
+
+        status.textContent =
+            'Checkmate — ' +
+            (game.turn() === 'w' ? 'Black' : 'White') +
+            ' wins';
+
+    } else if (game.in_stalemate()) {
+
+        status.textContent = 'Draw — Stalemate';
+
+    } else if (game.in_draw()) {
+
+        status.textContent = 'Draw';
+
+    } else if (game.in_check()) {
+
+        status.textContent = 'Check!';
+
+    } else if (game.game_over()) {
+
+        status.textContent = 'Game over';
+
+    } else {
+
+        status.textContent =
+            game.turn() === 'w'
+                ? 'Your move'
+                : 'Computer thinking…';
+    }
+}
+
+// Handle player's tap
+function tap(squareName) {
+
+    if (game.game_over() || game.turn() !== 'w') {
+        return;
+    }
+
+    // Select a white piece
+    if (selected === null) {
+
+        const piece = game.get(squareName);
+
+        if (piece && piece.color === 'w') {
+            selected = squareName;
+            render();
+        }
+
+        return;
+    }
+
+    // Try to make a move
+    const move = game.move({
+        from: selected,
+        to: squareName,
+        promotion: 'q'
+    });
+
+    selected = null;
+
+    // Invalid move
+    if (!move) {
+
+        const piece = game.get(squareName);
+
+        if (piece && piece.color === 'w') {
+            selected = squareName;
+        }
+
+        render();
+
+        return;
+    }
+
+    // Display player's move
+    render();
+
+    // Schedule computer response
+    cancelComputerMove();
+
+    computerTimer = setTimeout(computer, 400);
+}
+
+// Computer makes a random legal move
+function computer() {
+
+    computerTimer = null;
+
+    if (game.game_over() || game.turn() !== 'b') {
+        return;
+    }
+
+    const moves = game.moves();
+
+    if (moves.length === 0) {
+        render();
+        return;
+    }
+
+    const randomMove =
+        moves[Math.floor(Math.random() * moves.length)];
+
+    game.move(randomMove);
+
+    render();
+}
+
+// Start a new game
+function newGame() {
+
+    cancelComputerMove();
+
+    game.reset();
+
+    selected = null;
+
+    render();
+}
+
+// Undo player's and computer's last moves
+function undo() {
+
+    cancelComputerMove();
+
+    if (game.history().length === 0) {
+        return;
+    }
+
+    // Undo the last move
+    game.undo();
+
+    // If it was the computer's turn,
+    // also undo the player's previous move
+    if (game.turn() === 'b') {
+        game.undo();
+    }
+
+    selected = null;
+
+    render();
+}
+
+// Initial screen
 render();
-</script></body></html>
+
+</script>
+
+</body>
+</html>
